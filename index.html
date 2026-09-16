@@ -416,7 +416,7 @@
     <div class="top">
       <div>
         <h1>EE497 • Bidirectional Fingerspelling Translator</h1>
-        <div class="sub">Simon + Riku • 5-week build • assign ownership, track deadlines, and ship the MVP</div>
+        <div class="sub">Simon + Riku • 5-week build • <span id="syncState">Connecting to Supabase…</span></div>
       </div>
       <div class="actions"><button onclick="exportData()">Export Backup</button><label class="btn">Import Backup<input
             id="importFile" type="file" accept=".json" hidden></label><button class="primary" onclick="openNew()">+ Add
@@ -576,8 +576,8 @@
       ["Phone/web interface", "Allow optional phone access after the core system is complete.", "Unassigned", 5, "Stretch"],
       ["Phone camera streaming", "Use a phone camera as an optional remote video source.", "Unassigned", 5, "Stretch"],
       ["Wearable sensor fusion", "Explore IMU/finger sensors only after the complete MVP is stable.", "Unassigned", 5, "Stretch"]
-    ].map((x, i) => ({ id: Date.now() + i, name: x[0], desc: x[1], assigned: x[2], week: x[3], priority: x[4], status: "Not Started", deadline: "" }));
-    let tasks = JSON.parse(localStorage.getItem(KEY) || 'null') || seed;
+    ].map((x, i) => ({ id: null, name: x[0], desc: x[1], assigned: x[2], week: x[3], priority: x[4], status: "Not Started", deadline: "" }));
+    let tasks = [];
     const $ = id => document.getElementById(id);
     function persist() { render(); }
     function statusClass(s) { return s.replaceAll(' ', '') }
@@ -585,10 +585,11 @@
     async function loadTasks() {
       const { data, error } = await db.from('tasks').select('*').order('id', { ascending: true });
       if (error) { console.error(error); alert('Could not load tasks from Supabase.'); return; }
+      $('syncState').textContent = 'Shared board • Supabase connected';
       tasks = (data || []).map(row => ({
-        id: row.id,
-        task: row.task,
-        description: row.description || '',
+        id: Number(row.id),
+        name: row.task,
+        desc: row.description || '',
         assigned: row.assigned_to || 'Unassigned',
         status: row.status || 'Not Started',
         deadline: row.deadline || '',
@@ -603,8 +604,8 @@
       if (error) { console.error(error); return; }
       if (count === 0 && typeof seed !== 'undefined' && seed.length) {
         const rows = seed.map(t => ({
-          task: t.task,
-          description: t.description || '',
+          task: t.name,
+          description: t.desc || '',
           assigned_to: 'Unassigned',
           status: t.status || 'Not Started',
           deadline: t.deadline || null,
@@ -618,8 +619,8 @@
 
     async function saveRow(t) {
       const payload = {
-        task: t.task,
-        description: t.description || '',
+        task: t.name,
+        description: t.desc || '',
         assigned_to: t.assigned || 'Unassigned',
         status: t.status || 'Not Started',
         deadline: t.deadline || null,
@@ -628,10 +629,10 @@
       };
       if (t.id) {
         const { error } = await db.from('tasks').update(payload).eq('id', t.id);
-        if (error) { console.error(error); alert('Save failed.'); }
+        if (error) throw error;
       } else {
         const { error } = await db.from('tasks').insert(payload);
-        if (error) { console.error(error); alert('Save failed.'); }
+        if (error) throw error;
       }
     }
 
@@ -668,14 +669,73 @@
     function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
     function openNew() { $('modalTitle').textContent = 'Add Task'; $('editId').value = ''; $('taskName').value = ''; $('taskDesc').value = ''; $('assigned').value = 'Unassigned'; $('taskStatus').value = 'Not Started'; $('deadline').value = ''; $('week').value = '1'; $('priority').value = 'Normal'; $('dlg').showModal() }
     function editTask(id) { let t = tasks.find(x => x.id === id); $('modalTitle').textContent = 'Edit Task'; $('editId').value = id; $('taskName').value = t.name; $('taskDesc').value = t.desc; $('assigned').value = t.assigned; $('taskStatus').value = t.status; $('deadline').value = t.deadline; $('week').value = t.week; $('priority').value = t.priority; $('dlg').showModal() }
-    function saveTask() { if (!$('taskName').value.trim()) return alert('Give the task a name.'); let id = Number($('editId').value); let obj = { id: id || Date.now(), name: $('taskName').value.trim(), desc: $('taskDesc').value.trim(), assigned: $('assigned').value, status: $('taskStatus').value, deadline: $('deadline').value, week: Number($('week').value), priority: $('priority').value }; if (id) tasks = tasks.map(t => t.id === id ? obj : t); else tasks.push(obj); $('dlg').close(); persist() }
-    async function quickAssign(id, v) { const t = tasks.find(t => t.id === id); if (!t) return; t.assigned = v; render(); await saveRow(t); }
+    async function saveTask() {
+      if (!$('taskName').value.trim()) return alert('Give the task a name.');
+      const id = Number($('editId').value) || null;
+      const obj = {
+        id,
+        name: $('taskName').value.trim(),
+        desc: $('taskDesc').value.trim(),
+        assigned: $('assigned').value,
+        status: $('taskStatus').value,
+        deadline: $('deadline').value,
+        week: Number($('week').value),
+        priority: $('priority').value
+      };
+      try {
+        await saveRow(obj);
+        $('dlg').close();
+        await loadTasks();
+      } catch (error) {
+        console.error(error);
+        alert('Could not save task: ' + error.message);
+      }
+    }
+    async function quickAssign(id, v) {
+      const t = tasks.find(t => t.id === id); if (!t) return;
+      t.assigned = v;
+      try { await saveRow(t); await loadTasks(); }
+      catch (error) { console.error(error); alert('Could not update assignment: ' + error.message); await loadTasks(); }
+    }
     function filterOwner(n) { $('personFilter').value = n; render() }
     function clearOwnerFilter() { $('personFilter').value = ''; render() }
-    async function quickStatus(id, v) { const t = tasks.find(t => t.id === id); if (!t) return; t.status = v; render(); await saveRow(t); }
-    function delTask(id) { if (confirm('Delete this task?')) { tasks = tasks.filter(t => t.id !== id); persist() } }
+    async function quickStatus(id, v) {
+      const t = tasks.find(t => t.id === id); if (!t) return;
+      t.status = v;
+      try { await saveRow(t); await loadTasks(); }
+      catch (error) { console.error(error); alert('Could not update status: ' + error.message); await loadTasks(); }
+    }
+    async function delTask(id) {
+      if (!confirm('Delete this task?')) return;
+      const { error } = await db.from('tasks').delete().eq('id', id);
+      if (error) return alert('Could not delete task: ' + error.message);
+      await loadTasks();
+    }
     function exportData() { let b = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'ee497-task-board-backup.json'; a.click(); URL.revokeObjectURL(a.href) }
-    $('importFile').addEventListener('change', e => { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = () => { try { let d = JSON.parse(r.result); if (!Array.isArray(d)) throw 0; tasks = d; persist(); alert('Backup imported.') } catch { alert('That backup file is not valid.') } }; r.readAsText(f); e.target.value = '' });
+    $('importFile').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = async () => {
+        try {
+          const d = JSON.parse(r.result);
+          if (!Array.isArray(d)) throw new Error('Invalid backup');
+          const rows = d.map(t => ({
+            task: t.name || t.task,
+            description: t.desc || t.description || '',
+            assigned_to: t.assigned || t.assigned_to || 'Unassigned',
+            status: t.status || 'Not Started',
+            deadline: t.deadline || null,
+            week: t.week ? Number(t.week) : null,
+            priority: t.priority || 'Normal'
+          }));
+          const { error } = await db.from('tasks').insert(rows);
+          if (error) throw error;
+          await loadTasks();
+          alert('Backup imported to Supabase.');
+        } catch (err) { alert('Import failed: ' + err.message); }
+      };
+      r.readAsText(f); e.target.value = '';
+    });
     ['search', 'personFilter', 'statusFilter', 'weekFilter'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', render));
     (async () => { await seedIfEmpty(); await loadTasks(); subscribeRealtime(); })();
   </script>

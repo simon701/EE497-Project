@@ -2,616 +2,683 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>EE497 Project Task Board</title>
-    <style>
-        :root {
-            --bg: #0f1115;
-            --panel: #171a21;
-            --panel2: #1e222b;
-            --text: #f4f6fb;
-            --muted: #9da7b8;
-            --line: #2b3240;
-            --accent: #7aa2ff;
-            --ok: #56d38b;
-            --warn: #ffc857;
-            --danger: #ff6b7a
-        }
-
-        * {
-            box-sizing: border-box
-        }
-
-        body {
-            margin: 0;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-            background: var(--bg);
-            color: var(--text)
-        }
-
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            background: rgba(15, 17, 21, .94);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--line);
-            padding: 20px 24px
-        }
-
-        .top {
-            max-width: 1400px;
-            margin: auto;
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 24px
-        }
-
-        .sub {
-            color: var(--muted);
-            font-size: 13px;
-            margin-top: 4px
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap
-        }
-
-        button,
-        .btn {
-            border: 1px solid var(--line);
-            background: var(--panel2);
-            color: var(--text);
-            border-radius: 9px;
-            padding: 9px 12px;
-            cursor: pointer;
-            font-weight: 650
-        }
-
-        button:hover {
-            border-color: #46516a
-        }
-
-        .primary {
-            background: var(--accent);
-            color: #0b1020;
-            border-color: transparent
-        }
-
-        main {
-            max-width: 1400px;
-            margin: auto;
-            padding: 22px 24px 60px
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px
-        }
-
-        .stat {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            padding: 14px
-        }
-
-        .stat b {
-            font-size: 23px
-        }
-
-        .stat span {
-            display: block;
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 3px
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 9px;
-            flex-wrap: wrap;
-            margin-bottom: 16px
-        }
-
-        .assign-box {
-            background: linear-gradient(180deg, #191d25, #151820);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 16px
-        }
-
-        .assign-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 12px
-        }
-
-        .assign-head h2 {
-            font-size: 16px;
-            margin: 0
-        }
-
-        .assign-head p {
-            margin: 3px 0 0;
-            color: var(--muted);
-            font-size: 12px
-        }
-
-        .assign-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px
-        }
-
-        .person-card {
-            border: 1px solid var(--line);
-            background: #12151b;
-            border-radius: 12px;
-            padding: 13px;
-            cursor: pointer;
-            transition: .15s
-        }
-
-        .person-card:hover {
-            transform: translateY(-1px);
-            border-color: #4a5873
-        }
-
-        .person-card.active {
-            outline: 2px solid var(--accent);
-            border-color: transparent
-        }
-
-        .person-name {
-            font-weight: 800
-        }
-
-        .person-count {
-            font-size: 12px;
-            color: var(--muted);
-            margin-top: 4px
-        }
-
-        .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            background: var(--panel2);
-            font-weight: 850;
-            margin-bottom: 8px
-        }
-
-        .owner-select {
-            min-width: 130px;
-            font-weight: 700
-        }
-
-        .progressbar {
-            height: 7px;
-            background: #0e1116;
-            border-radius: 99px;
-            overflow: hidden;
-            margin-top: 9px
-        }
-
-        .progressbar i {
-            display: block;
-            height: 100%;
-            background: var(--accent);
-            border-radius: 99px
-        }
-
-        @media(max-width:700px) {
-            .assign-grid {
-                grid-template-columns: 1fr
-            }
-        }
-
-        input,
-        select,
-        textarea {
-            background: #11141a;
-            color: var(--text);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 9px;
-            font: inherit
-        }
-
-        .toolbar input {
-            min-width: 220px;
-            flex: 1
-        }
-
-        .board {
-            overflow: auto;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: var(--panel)
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            min-width: 1100px
-        }
-
-        th,
-        td {
-            padding: 11px 10px;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-            vertical-align: top
-        }
-
-        th {
-            font-size: 11px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            color: var(--muted);
-            background: #151820;
-            position: sticky;
-            top: 0
-        }
-
-        td {
-            font-size: 14px
-        }
-
-        .task-title {
-            font-weight: 750
-        }
-
-        .desc {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 4px;
-            max-width: 360px;
-            white-space: pre-wrap
-        }
-
-        .status {
-            font-weight: 700
-        }
-
-        .NotStarted {
-            color: var(--muted)
-        }
-
-        .Underway {
-            color: var(--warn)
-        }
-
-        .Complete {
-            color: var(--ok)
-        }
-
-        .overdue {
-            color: var(--danger);
-            font-weight: 700
-        }
-
-        .row-complete {
-            opacity: .65
-        }
-
-        .row-complete .task-title {
-            text-decoration: line-through
-        }
-
-        .icon {
-            padding: 6px 8px
-        }
-
-        .danger {
-            color: #ff9ba5
-        }
-
-        dialog {
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            background: var(--panel);
-            color: var(--text);
-            width: min(620px, 92vw);
-            padding: 0;
-            box-shadow: 0 30px 80px #0009
-        }
-
-        dialog::backdrop {
-            background: #0009
-        }
-
-        .modal {
-            padding: 20px
-        }
-
-        .modal h2 {
-            margin: 0 0 16px
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px
-        }
-
-        .field.full {
-            grid-column: 1/-1
-        }
-
-        .field label {
-            font-size: 12px;
-            color: var(--muted);
-            font-weight: 700
-        }
-
-        .field textarea {
-            min-height: 100px;
-            resize: vertical
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 18px
-        }
-
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: var(--muted)
-        }
-
-        @media(max-width:700px) {
-            .stats {
-                grid-template-columns: 1fr 1fr
-            }
-
-            .grid {
-                grid-template-columns: 1fr
-            }
-
-            .field.full {
-                grid-column: auto
-            }
-
-            header,
-            main {
-                padding-left: 14px;
-                padding-right: 14px
-            }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EE497 Project Task Board</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel2: #1e222b;
+      --text: #f4f6fb;
+      --muted: #9da7b8;
+      --line: #2b3240;
+      --accent: #7aa2ff;
+      --ok: #56d38b;
+      --warn: #ffc857;
+      --danger: #ff6b7a
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(15, 17, 21, .94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 20px 24px
+    }
+
+    .top {
+      max-width: 1400px;
+      margin: auto;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    button,
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 650
+    }
+
+    button:hover {
+      border-color: #46516a
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #0b1020;
+      border-color: transparent
+    }
+
+    main {
+      max-width: 1400px;
+      margin: auto;
+      padding: 22px 24px 60px
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px
+    }
+
+    .stat b {
+      font-size: 23px
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      margin-bottom: 16px
+    }
+
+    .assign-box {
+      background: linear-gradient(180deg, #191d25, #151820);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px
+    }
+
+    .assign-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px
+    }
+
+    .assign-head h2 {
+      font-size: 16px;
+      margin: 0
+    }
+
+    .assign-head p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .assign-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px
+    }
+
+    .person-card {
+      border: 1px solid var(--line);
+      background: #12151b;
+      border-radius: 12px;
+      padding: 13px;
+      cursor: pointer;
+      transition: .15s
+    }
+
+    .person-card:hover {
+      transform: translateY(-1px);
+      border-color: #4a5873
+    }
+
+    .person-card.active {
+      outline: 2px solid var(--accent);
+      border-color: transparent
+    }
+
+    .person-name {
+      font-weight: 800
+    }
+
+    .person-count {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--panel2);
+      font-weight: 850;
+      margin-bottom: 8px
+    }
+
+    .owner-select {
+      min-width: 130px;
+      font-weight: 700
+    }
+
+    .progressbar {
+      height: 7px;
+      background: #0e1116;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 9px
+    }
+
+    .progressbar i {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px
+    }
+
+    @media(max-width:700px) {
+      .assign-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    input,
+    select,
+    textarea {
+      background: #11141a;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+      font: inherit
+    }
+
+    .toolbar input {
+      min-width: 220px;
+      flex: 1
+    }
+
+    .board {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel)
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 1100px
+    }
+
+    th,
+    td {
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top
+    }
+
+    th {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #151820;
+      position: sticky;
+      top: 0
+    }
+
+    td {
+      font-size: 14px
+    }
+
+    .task-title {
+      font-weight: 750
+    }
+
+    .desc {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      max-width: 360px;
+      white-space: pre-wrap
+    }
+
+    .status {
+      font-weight: 700
+    }
+
+    .NotStarted {
+      color: var(--muted)
+    }
+
+    .Underway {
+      color: var(--warn)
+    }
+
+    .Complete {
+      color: var(--ok)
+    }
+
+    .overdue {
+      color: var(--danger);
+      font-weight: 700
+    }
+
+    .row-complete {
+      opacity: .65
+    }
+
+    .row-complete .task-title {
+      text-decoration: line-through
+    }
+
+    .icon {
+      padding: 6px 8px
+    }
+
+    .danger {
+      color: #ff9ba5
+    }
+
+    dialog {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      color: var(--text);
+      width: min(620px, 92vw);
+      padding: 0;
+      box-shadow: 0 30px 80px #0009
+    }
+
+    dialog::backdrop {
+      background: #0009
+    }
+
+    .modal {
+      padding: 20px
+    }
+
+    .modal h2 {
+      margin: 0 0 16px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .field.full {
+      grid-column: 1/-1
+    }
+
+    .field label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700
+    }
+
+    .field textarea {
+      min-height: 100px;
+      resize: vertical
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 18px
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted)
+    }
+
+    @media(max-width:700px) {
+      .stats {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .grid {
+        grid-template-columns: 1fr
+      }
+
+      .field.full {
+        grid-column: auto
+      }
+
+      header,
+      main {
+        padding-left: 14px;
+        padding-right: 14px
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-    <header>
-        <div class="top">
-            <div>
-                <h1>EE497 • Bidirectional Fingerspelling Translator</h1>
-                <div class="sub">Simon + Riku • 5-week build • assign ownership, track deadlines, and ship the MVP</div>
-            </div>
-            <div class="actions"><button onclick="exportData()">Export Backup</button><label class="btn">Import
-                    Backup<input id="importFile" type="file" accept=".json" hidden></label><button class="primary"
-                    onclick="openNew()">+ Add Task</button></div>
+  <header>
+    <div class="top">
+      <div>
+        <h1>EE497 • Bidirectional Fingerspelling Translator</h1>
+        <div class="sub">Simon + Riku • 5-week build • assign ownership, track deadlines, and ship the MVP</div>
+      </div>
+      <div class="actions"><button onclick="exportData()">Export Backup</button><label class="btn">Import Backup<input
+            id="importFile" type="file" accept=".json" hidden></label><button class="primary" onclick="openNew()">+ Add
+          Task</button></div>
+    </div>
+  </header>
+  <main>
+    <div class="stats">
+      <div class="stat"><b id="totalN">0</b><span>Total tasks</span></div>
+      <div class="stat"><b id="underN">0</b><span>Underway</span></div>
+      <div class="stat"><b id="doneN">0</b><span>Complete</span></div>
+      <div class="stat"><b id="pctN">0%</b><span>Overall progress</span></div>
+    </div>
+    <section class="assign-box">
+      <div class="assign-head">
+        <div>
+          <h2>Team Assignment</h2>
+          <p>Click a person to filter their tasks, or assign directly from any task row.</p>
+        </div><button onclick="clearOwnerFilter()">Show Everyone</button>
+      </div>
+      <div class="assign-grid">
+        <div class="person-card" id="card-Unassigned" onclick="filterOwner('Unassigned')">
+          <div class="avatar">?</div>
+          <div class="person-name">Unassigned</div>
+          <div class="person-count" id="count-Unassigned">0 tasks</div>
+          <div class="progressbar"><i id="bar-Unassigned" style="width:0%"></i></div>
         </div>
-    </header>
-    <main>
-        <div class="stats">
-            <div class="stat"><b id="totalN">0</b><span>Total tasks</span></div>
-            <div class="stat"><b id="underN">0</b><span>Underway</span></div>
-            <div class="stat"><b id="doneN">0</b><span>Complete</span></div>
-            <div class="stat"><b id="pctN">0%</b><span>Overall progress</span></div>
+        <div class="person-card" id="card-Simon" onclick="filterOwner('Simon')">
+          <div class="avatar">S</div>
+          <div class="person-name">Simon</div>
+          <div class="person-count" id="count-Simon">0 tasks</div>
+          <div class="progressbar"><i id="bar-Simon" style="width:0%"></i></div>
         </div>
-        <section class="assign-box">
-            <div class="assign-head">
-                <div>
-                    <h2>Team Assignment</h2>
-                    <p>Click a person to filter their tasks, or assign directly from any task row.</p>
-                </div><button onclick="clearOwnerFilter()">Show Everyone</button>
-            </div>
-            <div class="assign-grid">
-                <div class="person-card" id="card-Unassigned" onclick="filterOwner('Unassigned')">
-                    <div class="avatar">?</div>
-                    <div class="person-name">Unassigned</div>
-                    <div class="person-count" id="count-Unassigned">0 tasks</div>
-                    <div class="progressbar"><i id="bar-Unassigned" style="width:0%"></i></div>
-                </div>
-                <div class="person-card" id="card-Simon" onclick="filterOwner('Simon')">
-                    <div class="avatar">S</div>
-                    <div class="person-name">Simon</div>
-                    <div class="person-count" id="count-Simon">0 tasks</div>
-                    <div class="progressbar"><i id="bar-Simon" style="width:0%"></i></div>
-                </div>
-                <div class="person-card" id="card-Riku" onclick="filterOwner('Riku')">
-                    <div class="avatar">R</div>
-                    <div class="person-name">Riku</div>
-                    <div class="person-count" id="count-Riku">0 tasks</div>
-                    <div class="progressbar"><i id="bar-Riku" style="width:0%"></i></div>
-                </div>
-            </div>
-        </section>
-        <div class="toolbar"><input id="search" placeholder="Search tasks or descriptions…"><select id="personFilter">
-                <option value="">Everyone</option>
-                <option>Simon</option>
-                <option>Riku</option>
-                <option>Simon & Riku</option>
-            </select><select id="statusFilter">
-                <option value="">All statuses</option>
-                <option>Not Started</option>
-                <option>Underway</option>
-                <option>Complete</option>
-            </select><select id="weekFilter">
-                <option value="">All weeks</option>
-                <option value="1">Week 1</option>
-                <option value="2">Week 2</option>
-                <option value="3">Week 3</option>
-                <option value="4">Week 4</option>
-                <option value="5">Week 5</option>
-            </select></div>
-        <div class="board">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Task</th>
-                        <th>Assigned to</th>
-                        <th>Status</th>
-                        <th>Deadline</th>
-                        <th>Week</th>
-                        <th>Priority</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="rows"></tbody>
-            </table>
-            <div class="empty" id="empty" hidden>No tasks match these filters.</div>
+        <div class="person-card" id="card-Riku" onclick="filterOwner('Riku')">
+          <div class="avatar">R</div>
+          <div class="person-name">Riku</div>
+          <div class="person-count" id="count-Riku">0 tasks</div>
+          <div class="progressbar"><i id="bar-Riku" style="width:0%"></i></div>
         </div>
-    </main>
-    <dialog id="dlg">
-        <form class="modal" method="dialog" id="form">
-            <h2 id="modalTitle">Add Task</h2><input type="hidden" id="editId">
-            <div class="grid">
-                <div class="field full"><label>Task name</label><input id="taskName" required></div>
-                <div class="field full"><label>Description</label><textarea id="taskDesc"
-                        placeholder="What needs to be done? What counts as finished?"></textarea></div>
-                <div class="field"><label>Assigned to</label><select id="assigned">
-                        <option>Simon</option>
-                        <option>Riku</option>
-                        <option>Simon & Riku</option>
-                        <option>Unassigned</option>
-                    </select></div>
-                <div class="field"><label>Status</label><select id="taskStatus">
-                        <option>Not Started</option>
-                        <option>Underway</option>
-                        <option>Complete</option>
-                    </select></div>
-                <div class="field"><label>Deadline</label><input id="deadline" type="date"></div>
-                <div class="field"><label>Week</label><select id="week">
-                        <option value="1">Week 1</option>
-                        <option value="2">Week 2</option>
-                        <option value="3">Week 3</option>
-                        <option value="4">Week 4</option>
-                        <option value="5">Week 5</option>
-                    </select></div>
-                <div class="field"><label>Priority</label><select id="priority">
-                        <option>Critical</option>
-                        <option>High</option>
-                        <option>Normal</option>
-                        <option>Stretch</option>
-                    </select></div>
-            </div>
-            <div class="modal-actions"><button value="cancel">Cancel</button><button type="button" class="primary"
-                    onclick="saveTask()">Save Task</button></div>
-        </form>
-    </dialog>
-    <script>
-        const KEY = 'ee497_tasks_v1';
-        const seed = [
-            ["Finalize system requirements", "Define the MVP, supported fingerspelling scope, success criteria, and final demo.", "Unassigned", 1, "Critical"],
-            ["Finalize hardware / BOM", "Confirm camera, microphone, speaker, display, button, lighting, servo power, and <$150 budget.", "Unassigned", 1, "Critical"],
-            ["Create Git repository", "Create shared repository and basic project folder structure.", "Unassigned", 1, "Critical"],
-            ["Configure Raspberry Pi", "Set up Python environment and required packages.", "Unassigned", 1, "Critical"],
-            ["Camera bring-up", "Get a stable live feed from the Raspberry Pi camera.", "Unassigned", 1, "Critical"],
-            ["MediaPipe bring-up", "Detect a hand and display all 21 landmarks in real time.", "Unassigned", 1, "Critical"],
-            ["Hand-detection stress test", "Test lighting, distance, hand angle, background, and both team members.", "Unassigned", 1, "Critical"],
-            ["Microphone bring-up", "Record clear audio on the Raspberry Pi.", "Unassigned", 1, "Critical"],
-            ["Speech recognition proof", "Say a word such as hello and reliably receive text output.", "Unassigned", 1, "Critical"],
-            ["Button input", "Connect physical button and implement debounced press detection.", "Unassigned", 1, "Critical"],
-            ["Speaker / text-to-speech test", "Make the Pi speak supplied text through the selected audio output.", "Unassigned", 1, "Critical"],
-            ["ASL dataset pipeline", "Prepare labeled landmark data for supported fingerspelling characters.", "Unassigned", 2, "Critical"],
-            ["Initial ASL classifier", "Recognize roughly five distinct static letters from landmarks.", "Unassigned", 2, "Critical"],
-            ["Fingerspelling visual database", "Prepare the A-Z visual assets used for speech-to-fingerspelling output.", "Unassigned", 2, "Critical"],
-            ["Speech → fingerspelling prototype", "Speech recognition result → letters → sequential sign display.", "Unassigned", 2, "Critical"],
-            ["Recognition stabilization", "Add confidence threshold and prevent a held sign from registering repeatedly.", "Unassigned", 3, "Critical"],
-            ["Expand supported letters", "Increase classifier coverage while measuring weak/confused characters.", "Unassigned", 3, "Critical"],
-            ["Word formation", "Accumulate confirmed recognized letters into a word.", "Unassigned", 3, "Critical"],
-            ["Signer controls", "Implement finish/reset/delete behavior for recognized words.", "Unassigned", 3, "High"],
-            ["Recording toggle", "First press starts recording; second press stops and processes speech.", "Unassigned", 3, "Critical"],
-            ["ASL → speech pipeline", "Recognized fingerspelling → word → text-to-speech.", "Unassigned", 3, "Critical"],
-            ["Integrate both directions", "Run ASL→speech and speech→fingerspelling in one application.", "Unassigned", 3, "Critical"],
-            ["Basic user interface", "Show status, recognized text, signs, and clear prompts.", "Unassigned", 4, "High"],
-            ["Sense HAT status", "Use Sense HAT for ready/listening/processing/error feedback.", "Unassigned", 4, "High"],
-            ["Servo bring-up", "Safely control camera tilt using the existing servo and external power.", "Unassigned", 4, "High"],
-            ["Camera mount", "Build a stable camera/servo mounting solution.", "Unassigned", 4, "High"],
-            ["End-to-end testing", "Test multiple words, users, distances, and lighting conditions.", "Unassigned", 4, "Critical"],
-            ["Measure performance", "Record recognition accuracy and translation latency.", "Unassigned", 5, "High"],
-            ["Fix failure cases", "Prioritize the weakest letters, timing problems, and UI issues.", "Unassigned", 5, "Critical"],
-            ["Physical assembly", "Clean wiring, controls, lighting, camera, and enclosure/mount.", "Unassigned", 5, "High"],
-            ["Final demo preparation", "Prepare known-good demo cases, backup demo, and presentation flow.", "Unassigned", 5, "Critical"],
-            ["Documentation", "Document architecture, results, limitations, and future improvements.", "Unassigned", 5, "Critical"],
-            ["Automatic servo hand tracking", "Use hand vertical position to automatically adjust camera tilt.", "Unassigned", 4, "Stretch"],
-            ["Phone/web interface", "Allow optional phone access after the core system is complete.", "Unassigned", 5, "Stretch"],
-            ["Phone camera streaming", "Use a phone camera as an optional remote video source.", "Unassigned", 5, "Stretch"],
-            ["Wearable sensor fusion", "Explore IMU/finger sensors only after the complete MVP is stable.", "Unassigned", 5, "Stretch"]
-        ].map((x, i) => ({ id: Date.now() + i, name: x[0], desc: x[1], assigned: x[2], week: x[3], priority: x[4], status: "Not Started", deadline: "" }));
-        let tasks = JSON.parse(localStorage.getItem(KEY) || 'null') || seed;
-        const $ = id => document.getElementById(id);
-        function persist() { localStorage.setItem(KEY, JSON.stringify(tasks)); render() }
-        function statusClass(s) { return s.replaceAll(' ', '') }
-        function render() {
-            let q = $('search').value.toLowerCase(), pf = $('personFilter').value, sf = $('statusFilter').value, wf = $('weekFilter').value;
-            let f = tasks.filter(t => (!q || (t.name + ' ' + t.desc).toLowerCase().includes(q)) && (!pf || t.assigned === pf) && (!sf || t.status === sf) && (!wf || String(t.week) === wf));
-            $('rows').innerHTML = f.map((t, i) => {
-                let od = t.deadline && t.status !== "Complete" && new Date(t.deadline + "T23:59:59") < new Date();
-                return `<tr class="${t.status === "Complete" ? 'row-complete' : ''}"><td>${i + 1}</td><td><div class="task-title">${esc(t.name)}</div><div class="desc">${esc(t.desc)}</div></td><td><select class="owner-select" onchange="quickAssign(${t.id},this.value)">
+      </div>
+    </section>
+    <div class="toolbar"><input id="search" placeholder="Search tasks or descriptions…"><select id="personFilter">
+        <option value="">Everyone</option>
+        <option>Simon</option>
+        <option>Riku</option>
+        <option>Simon & Riku</option>
+      </select><select id="statusFilter">
+        <option value="">All statuses</option>
+        <option>Not Started</option>
+        <option>Underway</option>
+        <option>Complete</option>
+      </select><select id="weekFilter">
+        <option value="">All weeks</option>
+        <option value="1">Week 1</option>
+        <option value="2">Week 2</option>
+        <option value="3">Week 3</option>
+        <option value="4">Week 4</option>
+        <option value="5">Week 5</option>
+      </select></div>
+    <div class="board">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Task</th>
+            <th>Assigned to</th>
+            <th>Status</th>
+            <th>Deadline</th>
+            <th>Week</th>
+            <th>Priority</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden>No tasks match these filters.</div>
+    </div>
+  </main>
+  <dialog id="dlg">
+    <form class="modal" method="dialog" id="form">
+      <h2 id="modalTitle">Add Task</h2><input type="hidden" id="editId">
+      <div class="grid">
+        <div class="field full"><label>Task name</label><input id="taskName" required></div>
+        <div class="field full"><label>Description</label><textarea id="taskDesc"
+            placeholder="What needs to be done? What counts as finished?"></textarea></div>
+        <div class="field"><label>Assigned to</label><select id="assigned">
+            <option>Simon</option>
+            <option>Riku</option>
+            <option>Simon & Riku</option>
+            <option>Unassigned</option>
+          </select></div>
+        <div class="field"><label>Status</label><select id="taskStatus">
+            <option>Not Started</option>
+            <option>Underway</option>
+            <option>Complete</option>
+          </select></div>
+        <div class="field"><label>Deadline</label><input id="deadline" type="date"></div>
+        <div class="field"><label>Week</label><select id="week">
+            <option value="1">Week 1</option>
+            <option value="2">Week 2</option>
+            <option value="3">Week 3</option>
+            <option value="4">Week 4</option>
+            <option value="5">Week 5</option>
+          </select></div>
+        <div class="field"><label>Priority</label><select id="priority">
+            <option>Critical</option>
+            <option>High</option>
+            <option>Normal</option>
+            <option>Stretch</option>
+          </select></div>
+      </div>
+      <div class="modal-actions"><button value="cancel">Cancel</button><button type="button" class="primary"
+          onclick="saveTask()">Save Task</button></div>
+    </form>
+  </dialog>
+  <script>
+    const SUPABASE_URL = "https://hgthuroukylyklxhvprz.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_gX8Yx8BnvXF-btDB78UjyA_JeOpHR_y";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let realtimeChannel = null;
+
+    const KEY = 'ee497_tasks_v1';
+    const seed = [
+      ["Finalize system requirements", "Define the MVP, supported fingerspelling scope, success criteria, and final demo.", "Unassigned", 1, "Critical"],
+      ["Finalize hardware / BOM", "Confirm camera, microphone, speaker, display, button, lighting, servo power, and <$150 budget.", "Unassigned", 1, "Critical"],
+      ["Create Git repository", "Create shared repository and basic project folder structure.", "Unassigned", 1, "Critical"],
+      ["Configure Raspberry Pi", "Set up Python environment and required packages.", "Unassigned", 1, "Critical"],
+      ["Camera bring-up", "Get a stable live feed from the Raspberry Pi camera.", "Unassigned", 1, "Critical"],
+      ["MediaPipe bring-up", "Detect a hand and display all 21 landmarks in real time.", "Unassigned", 1, "Critical"],
+      ["Hand-detection stress test", "Test lighting, distance, hand angle, background, and both team members.", "Unassigned", 1, "Critical"],
+      ["Microphone bring-up", "Record clear audio on the Raspberry Pi.", "Unassigned", 1, "Critical"],
+      ["Speech recognition proof", "Say a word such as hello and reliably receive text output.", "Unassigned", 1, "Critical"],
+      ["Button input", "Connect physical button and implement debounced press detection.", "Unassigned", 1, "Critical"],
+      ["Speaker / text-to-speech test", "Make the Pi speak supplied text through the selected audio output.", "Unassigned", 1, "Critical"],
+      ["ASL dataset pipeline", "Prepare labeled landmark data for supported fingerspelling characters.", "Unassigned", 2, "Critical"],
+      ["Initial ASL classifier", "Recognize roughly five distinct static letters from landmarks.", "Unassigned", 2, "Critical"],
+      ["Fingerspelling visual database", "Prepare the A-Z visual assets used for speech-to-fingerspelling output.", "Unassigned", 2, "Critical"],
+      ["Speech → fingerspelling prototype", "Speech recognition result → letters → sequential sign display.", "Unassigned", 2, "Critical"],
+      ["Recognition stabilization", "Add confidence threshold and prevent a held sign from registering repeatedly.", "Unassigned", 3, "Critical"],
+      ["Expand supported letters", "Increase classifier coverage while measuring weak/confused characters.", "Unassigned", 3, "Critical"],
+      ["Word formation", "Accumulate confirmed recognized letters into a word.", "Unassigned", 3, "Critical"],
+      ["Signer controls", "Implement finish/reset/delete behavior for recognized words.", "Unassigned", 3, "High"],
+      ["Recording toggle", "First press starts recording; second press stops and processes speech.", "Unassigned", 3, "Critical"],
+      ["ASL → speech pipeline", "Recognized fingerspelling → word → text-to-speech.", "Unassigned", 3, "Critical"],
+      ["Integrate both directions", "Run ASL→speech and speech→fingerspelling in one application.", "Unassigned", 3, "Critical"],
+      ["Basic user interface", "Show status, recognized text, signs, and clear prompts.", "Unassigned", 4, "High"],
+      ["Sense HAT status", "Use Sense HAT for ready/listening/processing/error feedback.", "Unassigned", 4, "High"],
+      ["Servo bring-up", "Safely control camera tilt using the existing servo and external power.", "Unassigned", 4, "High"],
+      ["Camera mount", "Build a stable camera/servo mounting solution.", "Unassigned", 4, "High"],
+      ["End-to-end testing", "Test multiple words, users, distances, and lighting conditions.", "Unassigned", 4, "Critical"],
+      ["Measure performance", "Record recognition accuracy and translation latency.", "Unassigned", 5, "High"],
+      ["Fix failure cases", "Prioritize the weakest letters, timing problems, and UI issues.", "Unassigned", 5, "Critical"],
+      ["Physical assembly", "Clean wiring, controls, lighting, camera, and enclosure/mount.", "Unassigned", 5, "High"],
+      ["Final demo preparation", "Prepare known-good demo cases, backup demo, and presentation flow.", "Unassigned", 5, "Critical"],
+      ["Documentation", "Document architecture, results, limitations, and future improvements.", "Unassigned", 5, "Critical"],
+      ["Automatic servo hand tracking", "Use hand vertical position to automatically adjust camera tilt.", "Unassigned", 4, "Stretch"],
+      ["Phone/web interface", "Allow optional phone access after the core system is complete.", "Unassigned", 5, "Stretch"],
+      ["Phone camera streaming", "Use a phone camera as an optional remote video source.", "Unassigned", 5, "Stretch"],
+      ["Wearable sensor fusion", "Explore IMU/finger sensors only after the complete MVP is stable.", "Unassigned", 5, "Stretch"]
+    ].map((x, i) => ({ id: Date.now() + i, name: x[0], desc: x[1], assigned: x[2], week: x[3], priority: x[4], status: "Not Started", deadline: "" }));
+    let tasks = JSON.parse(localStorage.getItem(KEY) || 'null') || seed;
+    const $ = id => document.getElementById(id);
+    function persist() { render(); }
+    function statusClass(s) { return s.replaceAll(' ', '') }
+
+    async function loadTasks() {
+      const { data, error } = await db.from('tasks').select('*').order('id', { ascending: true });
+      if (error) { console.error(error); alert('Could not load tasks from Supabase.'); return; }
+      tasks = (data || []).map(row => ({
+        id: row.id,
+        task: row.task,
+        description: row.description || '',
+        assigned: row.assigned_to || 'Unassigned',
+        status: row.status || 'Not Started',
+        deadline: row.deadline || '',
+        week: row.week || '',
+        priority: row.priority || 'Normal'
+      }));
+      render();
+    }
+
+    async function seedIfEmpty() {
+      const { count, error } = await db.from('tasks').select('*', { count: 'exact', head: true });
+      if (error) { console.error(error); return; }
+      if (count === 0 && typeof seed !== 'undefined' && seed.length) {
+        const rows = seed.map(t => ({
+          task: t.task,
+          description: t.description || '',
+          assigned_to: 'Unassigned',
+          status: t.status || 'Not Started',
+          deadline: t.deadline || null,
+          week: t.week || null,
+          priority: t.priority || 'Normal'
+        }));
+        const { error: insertError } = await db.from('tasks').insert(rows);
+        if (insertError) console.error(insertError);
+      }
+    }
+
+    async function saveRow(t) {
+      const payload = {
+        task: t.task,
+        description: t.description || '',
+        assigned_to: t.assigned || 'Unassigned',
+        status: t.status || 'Not Started',
+        deadline: t.deadline || null,
+        week: t.week ? Number(t.week) : null,
+        priority: t.priority || 'Normal'
+      };
+      if (t.id) {
+        const { error } = await db.from('tasks').update(payload).eq('id', t.id);
+        if (error) { console.error(error); alert('Save failed.'); }
+      } else {
+        const { error } = await db.from('tasks').insert(payload);
+        if (error) { console.error(error); alert('Save failed.'); }
+      }
+    }
+
+    function subscribeRealtime() {
+      if (realtimeChannel) return;
+      realtimeChannel = db.channel('tasks-live')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadTasks())
+        .subscribe();
+    }
+
+    function render() {
+      let q = $('search').value.toLowerCase(), pf = $('personFilter').value, sf = $('statusFilter').value, wf = $('weekFilter').value;
+      let f = tasks.filter(t => (!q || (t.name + ' ' + t.desc).toLowerCase().includes(q)) && (!pf || t.assigned === pf) && (!sf || t.status === sf) && (!wf || String(t.week) === wf));
+      $('rows').innerHTML = f.map((t, i) => {
+        let od = t.deadline && t.status !== "Complete" && new Date(t.deadline + "T23:59:59") < new Date();
+        return `<tr class="${t.status === "Complete" ? 'row-complete' : ''}"><td>${i + 1}</td><td><div class="task-title">${esc(t.name)}</div><div class="desc">${esc(t.desc)}</div></td><td><select class="owner-select" onchange="quickAssign(${t.id},this.value)">
 <option ${t.assigned === "Unassigned" ? 'selected' : ''}>Unassigned</option>
 <option ${t.assigned === "Simon" ? 'selected' : ''}>Simon</option>
 <option ${t.assigned === "Riku" ? 'selected' : ''}>Riku</option>
 <option ${t.assigned === "Simon & Riku" ? 'selected' : ''}>Simon & Riku</option>
 </select></td><td><select class="status ${statusClass(t.status)}" onchange="quickStatus(${t.id},this.value)"><option ${t.status === "Not Started" ? 'selected' : ''}>Not Started</option><option ${t.status === "Underway" ? 'selected' : ''}>Underway</option><option ${t.status === "Complete" ? 'selected' : ''}>Complete</option></select></td><td class="${od ? 'overdue' : ''}">${t.deadline || '—'}${od ? ' • overdue' : ''}</td><td>Week ${t.week}</td><td>${t.priority}</td><td><button class="icon" onclick="editTask(${t.id})">Edit</button> <button class="icon danger" onclick="delTask(${t.id})">Delete</button></td></tr>`
-            }).join('');
-            $('empty').hidden = f.length > 0;
-            ['Unassigned', 'Simon', 'Riku'].forEach(n => {
-                let owned = tasks.filter(t => t.assigned === n || (n !== 'Unassigned' && t.assigned === 'Simon & Riku'));
-                let completed = owned.filter(t => t.status === 'Complete').length;
-                $('count-' + n).textContent = owned.length + ' task' + (owned.length === 1 ? '' : 's') + (owned.length ? ` • ${completed} complete` : '');
-                $('bar-' + n).style.width = owned.length ? Math.round(completed / owned.length * 100) + '%' : '0%';
-                $('card-' + n).classList.toggle('active', $('personFilter').value === n);
-            });
-            let done = tasks.filter(t => t.status === "Complete").length, under = tasks.filter(t => t.status === "Underway").length;
-            $('totalN').textContent = tasks.length; $('underN').textContent = under; $('doneN').textContent = done; $('pctN').textContent = tasks.length ? Math.round(done / tasks.length * 100) + '%' : '0%';
-        }
-        function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
-        function openNew() { $('modalTitle').textContent = 'Add Task'; $('editId').value = ''; $('taskName').value = ''; $('taskDesc').value = ''; $('assigned').value = 'Unassigned'; $('taskStatus').value = 'Not Started'; $('deadline').value = ''; $('week').value = '1'; $('priority').value = 'Normal'; $('dlg').showModal() }
-        function editTask(id) { let t = tasks.find(x => x.id === id); $('modalTitle').textContent = 'Edit Task'; $('editId').value = id; $('taskName').value = t.name; $('taskDesc').value = t.desc; $('assigned').value = t.assigned; $('taskStatus').value = t.status; $('deadline').value = t.deadline; $('week').value = t.week; $('priority').value = t.priority; $('dlg').showModal() }
-        function saveTask() { if (!$('taskName').value.trim()) return alert('Give the task a name.'); let id = Number($('editId').value); let obj = { id: id || Date.now(), name: $('taskName').value.trim(), desc: $('taskDesc').value.trim(), assigned: $('assigned').value, status: $('taskStatus').value, deadline: $('deadline').value, week: Number($('week').value), priority: $('priority').value }; if (id) tasks = tasks.map(t => t.id === id ? obj : t); else tasks.push(obj); $('dlg').close(); persist() }
-        function quickAssign(id, v) { tasks.find(t => t.id === id).assigned = v; persist() }
-        function filterOwner(n) { $('personFilter').value = n; render() }
-        function clearOwnerFilter() { $('personFilter').value = ''; render() }
-        function quickStatus(id, v) { tasks.find(t => t.id === id).status = v; persist() }
-        function delTask(id) { if (confirm('Delete this task?')) { tasks = tasks.filter(t => t.id !== id); persist() } }
-        function exportData() { let b = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'ee497-task-board-backup.json'; a.click(); URL.revokeObjectURL(a.href) }
-        $('importFile').addEventListener('change', e => { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = () => { try { let d = JSON.parse(r.result); if (!Array.isArray(d)) throw 0; tasks = d; persist(); alert('Backup imported.') } catch { alert('That backup file is not valid.') } }; r.readAsText(f); e.target.value = '' });
-        ['search', 'personFilter', 'statusFilter', 'weekFilter'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', render));
-        render();
-    </script>
+      }).join('');
+      $('empty').hidden = f.length > 0;
+      ['Unassigned', 'Simon', 'Riku'].forEach(n => {
+        let owned = tasks.filter(t => t.assigned === n || (n !== 'Unassigned' && t.assigned === 'Simon & Riku'));
+        let completed = owned.filter(t => t.status === 'Complete').length;
+        $('count-' + n).textContent = owned.length + ' task' + (owned.length === 1 ? '' : 's') + (owned.length ? ` • ${completed} complete` : '');
+        $('bar-' + n).style.width = owned.length ? Math.round(completed / owned.length * 100) + '%' : '0%';
+        $('card-' + n).classList.toggle('active', $('personFilter').value === n);
+      });
+      let done = tasks.filter(t => t.status === "Complete").length, under = tasks.filter(t => t.status === "Underway").length;
+      $('totalN').textContent = tasks.length; $('underN').textContent = under; $('doneN').textContent = done; $('pctN').textContent = tasks.length ? Math.round(done / tasks.length * 100) + '%' : '0%';
+    }
+    function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
+    function openNew() { $('modalTitle').textContent = 'Add Task'; $('editId').value = ''; $('taskName').value = ''; $('taskDesc').value = ''; $('assigned').value = 'Unassigned'; $('taskStatus').value = 'Not Started'; $('deadline').value = ''; $('week').value = '1'; $('priority').value = 'Normal'; $('dlg').showModal() }
+    function editTask(id) { let t = tasks.find(x => x.id === id); $('modalTitle').textContent = 'Edit Task'; $('editId').value = id; $('taskName').value = t.name; $('taskDesc').value = t.desc; $('assigned').value = t.assigned; $('taskStatus').value = t.status; $('deadline').value = t.deadline; $('week').value = t.week; $('priority').value = t.priority; $('dlg').showModal() }
+    function saveTask() { if (!$('taskName').value.trim()) return alert('Give the task a name.'); let id = Number($('editId').value); let obj = { id: id || Date.now(), name: $('taskName').value.trim(), desc: $('taskDesc').value.trim(), assigned: $('assigned').value, status: $('taskStatus').value, deadline: $('deadline').value, week: Number($('week').value), priority: $('priority').value }; if (id) tasks = tasks.map(t => t.id === id ? obj : t); else tasks.push(obj); $('dlg').close(); persist() }
+    async function quickAssign(id, v) { const t = tasks.find(t => t.id === id); if (!t) return; t.assigned = v; render(); await saveRow(t); }
+    function filterOwner(n) { $('personFilter').value = n; render() }
+    function clearOwnerFilter() { $('personFilter').value = ''; render() }
+    async function quickStatus(id, v) { const t = tasks.find(t => t.id === id); if (!t) return; t.status = v; render(); await saveRow(t); }
+    function delTask(id) { if (confirm('Delete this task?')) { tasks = tasks.filter(t => t.id !== id); persist() } }
+    function exportData() { let b = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'ee497-task-board-backup.json'; a.click(); URL.revokeObjectURL(a.href) }
+    $('importFile').addEventListener('change', e => { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = () => { try { let d = JSON.parse(r.result); if (!Array.isArray(d)) throw 0; tasks = d; persist(); alert('Backup imported.') } catch { alert('That backup file is not valid.') } }; r.readAsText(f); e.target.value = '' });
+    ['search', 'personFilter', 'statusFilter', 'weekFilter'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', render));
+    (async () => { await seedIfEmpty(); await loadTasks(); subscribeRealtime(); })();
+  </script>
 </body>
 
 </html>

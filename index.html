@@ -310,6 +310,11 @@
       font-weight: 700
     }
 
+    #projectClock {
+      color: var(--accent);
+      font-weight: 700
+    }
+
     .row-complete {
       opacity: .65
     }
@@ -416,7 +421,7 @@
     <div class="top">
       <div>
         <h1>EE497 • Bidirectional Fingerspelling Translator</h1>
-        <div class="sub">Simon + Riku • 5-week build • <span id="syncState">Connecting to Supabase…</span></div>
+        <div class="sub">Simon + Riku • <span id="projectClock">Deadline-driven build</span> • <span id="syncState">Connecting to Supabase…</span></div>
       </div>
       <div class="actions"><button onclick="exportData()">Export Backup</button><label class="btn">Import Backup<input
             id="importFile" type="file" accept=".json" hidden></label><button class="primary" onclick="openNew()">+ Add
@@ -468,13 +473,13 @@
         <option>Not Started</option>
         <option>Underway</option>
         <option>Complete</option>
-      </select><select id="weekFilter">
-        <option value="">All weeks</option>
-        <option value="1">Week 1</option>
-        <option value="2">Week 2</option>
-        <option value="3">Week 3</option>
-        <option value="4">Week 4</option>
-        <option value="5">Week 5</option>
+      </select><select id="dateFilter">
+        <option value="">All dates</option>
+        <option value="overdue">Overdue</option>
+        <option value="today">Today</option>
+        <option value="next7">Next 7 days</option>
+        <option value="later">Later</option>
+        <option value="none">No deadline</option>
       </select></div>
     <div class="board">
       <table>
@@ -485,7 +490,6 @@
             <th>Assigned to</th>
             <th>Status</th>
             <th>Deadline</th>
-            <th>Week</th>
             <th>Priority</th>
             <th>Actions</th>
           </tr>
@@ -514,13 +518,6 @@
             <option>Complete</option>
           </select></div>
         <div class="field"><label>Deadline</label><input id="deadline" type="date"></div>
-        <div class="field"><label>Week</label><select id="week">
-            <option value="1">Week 1</option>
-            <option value="2">Week 2</option>
-            <option value="3">Week 3</option>
-            <option value="4">Week 4</option>
-            <option value="5">Week 5</option>
-          </select></div>
         <div class="field"><label>Priority</label><select id="priority">
             <option>Critical</option>
             <option>High</option>
@@ -643,17 +640,65 @@
         .subscribe();
     }
 
+    function startOfToday() {
+      const d = new Date(); d.setHours(0, 0, 0, 0); return d;
+    }
+    function parseDeadline(value) {
+      return value ? new Date(value + "T00:00:00") : null;
+    }
+    function daysFromToday(value) {
+      const d = parseDeadline(value); if (!d) return null;
+      return Math.round((d - startOfToday()) / 86400000);
+    }
+    function dateBucket(t) {
+      if (!t.deadline) return 'none';
+      const n = daysFromToday(t.deadline);
+      if (n < 0 && t.status !== 'Complete') return 'overdue';
+      if (n === 0) return 'today';
+      if (n > 0 && n <= 7) return 'next7';
+      return 'later';
+    }
+    function deadlineLabel(t) {
+      if (!t.deadline) return 'No deadline';
+      const n = daysFromToday(t.deadline);
+      const pretty = parseDeadline(t.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      if (t.status === 'Complete') return pretty;
+      if (n < 0) return `${pretty} • ${Math.abs(n)} day${Math.abs(n) === 1 ? '' : 's'} overdue`;
+      if (n === 0) return `${pretty} • Today`;
+      if (n === 1) return `${pretty} • Tomorrow`;
+      if (n <= 7) return `${pretty} • ${n} days left`;
+      return `${pretty} • ${n} days left`;
+    }
+    function sortTasks(list) {
+      const priorityRank = { Critical: 0, High: 1, Normal: 2, Stretch: 3 };
+      return [...list].sort((a, b) => {
+        if (a.status === 'Complete' && b.status !== 'Complete') return 1;
+        if (b.status === 'Complete' && a.status !== 'Complete') return -1;
+        if (!a.deadline && b.deadline) return 1;
+        if (a.deadline && !b.deadline) return -1;
+        if (a.deadline && b.deadline && a.deadline !== b.deadline) return a.deadline.localeCompare(b.deadline);
+        return (priorityRank[a.priority] ?? 9) - (priorityRank[b.priority] ?? 9);
+      });
+    }
+    function updateProjectClock() {
+      const active = tasks.filter(t => t.status !== 'Complete' && t.deadline);
+      if (!active.length) { $('projectClock').textContent = 'No active deadlines'; return; }
+      const last = [...active].sort((a,b) => b.deadline.localeCompare(a.deadline))[0];
+      const n = daysFromToday(last.deadline);
+      $('projectClock').textContent = n >= 0 ? `${n} day${n === 1 ? '' : 's'} to final scheduled deadline` : 'Scheduled deadline passed';
+    }
     function render() {
-      let q = $('search').value.toLowerCase(), pf = $('personFilter').value, sf = $('statusFilter').value, wf = $('weekFilter').value;
-      let f = tasks.filter(t => (!q || (t.name + ' ' + t.desc).toLowerCase().includes(q)) && (!pf || t.assigned === pf) && (!sf || t.status === sf) && (!wf || String(t.week) === wf));
+      let q = $('search').value.toLowerCase(), pf = $('personFilter').value, sf = $('statusFilter').value, df = $('dateFilter').value;
+      let f = tasks.filter(t => (!q || (t.name + ' ' + t.desc).toLowerCase().includes(q)) && (!pf || t.assigned === pf) && (!sf || t.status === sf) && (!df || dateBucket(t) === df));
+      f = sortTasks(f);
       $('rows').innerHTML = f.map((t, i) => {
-        let od = t.deadline && t.status !== "Complete" && new Date(t.deadline + "T23:59:59") < new Date();
+        let od = dateBucket(t) === 'overdue';
         return `<tr class="${t.status === "Complete" ? 'row-complete' : ''}"><td>${i + 1}</td><td><div class="task-title">${esc(t.name)}</div><div class="desc">${esc(t.desc)}</div></td><td><select class="owner-select" onchange="quickAssign(${t.id},this.value)">
 <option ${t.assigned === "Unassigned" ? 'selected' : ''}>Unassigned</option>
 <option ${t.assigned === "Simon" ? 'selected' : ''}>Simon</option>
 <option ${t.assigned === "Riku" ? 'selected' : ''}>Riku</option>
 <option ${t.assigned === "Simon & Riku" ? 'selected' : ''}>Simon & Riku</option>
-</select></td><td><select class="status ${statusClass(t.status)}" onchange="quickStatus(${t.id},this.value)"><option ${t.status === "Not Started" ? 'selected' : ''}>Not Started</option><option ${t.status === "Underway" ? 'selected' : ''}>Underway</option><option ${t.status === "Complete" ? 'selected' : ''}>Complete</option></select></td><td class="${od ? 'overdue' : ''}">${t.deadline || '—'}${od ? ' • overdue' : ''}</td><td>Week ${t.week}</td><td>${t.priority}</td><td><button class="icon" onclick="editTask(${t.id})">Edit</button> <button class="icon danger" onclick="delTask(${t.id})">Delete</button></td></tr>`
+</select></td><td><select class="status ${statusClass(t.status)}" onchange="quickStatus(${t.id},this.value)"><option ${t.status === "Not Started" ? 'selected' : ''}>Not Started</option><option ${t.status === "Underway" ? 'selected' : ''}>Underway</option><option ${t.status === "Complete" ? 'selected' : ''}>Complete</option></select></td><td class="${od ? 'overdue' : ''}">${esc(deadlineLabel(t))}</td><td>${esc(t.priority)}</td><td><button class="icon" onclick="editTask(${t.id})">Edit</button> <button class="icon danger" onclick="delTask(${t.id})">Delete</button></td></tr>`
       }).join('');
       $('empty').hidden = f.length > 0;
       ['Unassigned', 'Simon', 'Riku'].forEach(n => {
@@ -665,10 +710,11 @@
       });
       let done = tasks.filter(t => t.status === "Complete").length, under = tasks.filter(t => t.status === "Underway").length;
       $('totalN').textContent = tasks.length; $('underN').textContent = under; $('doneN').textContent = done; $('pctN').textContent = tasks.length ? Math.round(done / tasks.length * 100) + '%' : '0%';
+      updateProjectClock();
     }
     function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
-    function openNew() { $('modalTitle').textContent = 'Add Task'; $('editId').value = ''; $('taskName').value = ''; $('taskDesc').value = ''; $('assigned').value = 'Unassigned'; $('taskStatus').value = 'Not Started'; $('deadline').value = ''; $('week').value = '1'; $('priority').value = 'Normal'; $('dlg').showModal() }
-    function editTask(id) { let t = tasks.find(x => x.id === id); $('modalTitle').textContent = 'Edit Task'; $('editId').value = id; $('taskName').value = t.name; $('taskDesc').value = t.desc; $('assigned').value = t.assigned; $('taskStatus').value = t.status; $('deadline').value = t.deadline; $('week').value = t.week; $('priority').value = t.priority; $('dlg').showModal() }
+    function openNew() { $('modalTitle').textContent = 'Add Task'; $('editId').value = ''; $('taskName').value = ''; $('taskDesc').value = ''; $('assigned').value = 'Unassigned'; $('taskStatus').value = 'Not Started'; $('deadline').value = ''; $('priority').value = 'Normal'; $('dlg').showModal() }
+    function editTask(id) { let t = tasks.find(x => x.id === id); $('modalTitle').textContent = 'Edit Task'; $('editId').value = id; $('taskName').value = t.name; $('taskDesc').value = t.desc; $('assigned').value = t.assigned; $('taskStatus').value = t.status; $('deadline').value = t.deadline; $('priority').value = t.priority; $('dlg').showModal() }
     async function saveTask() {
       if (!$('taskName').value.trim()) return alert('Give the task a name.');
       const id = Number($('editId').value) || null;
@@ -679,7 +725,6 @@
         assigned: $('assigned').value,
         status: $('taskStatus').value,
         deadline: $('deadline').value,
-        week: Number($('week').value),
         priority: $('priority').value
       };
       try {
@@ -736,7 +781,7 @@
       };
       r.readAsText(f); e.target.value = '';
     });
-    ['search', 'personFilter', 'statusFilter', 'weekFilter'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', render));
+    ['search', 'personFilter', 'statusFilter', 'dateFilter'].forEach(id => $(id).addEventListener(id === 'search' ? 'input' : 'change', render));
     (async () => { await seedIfEmpty(); await loadTasks(); subscribeRealtime(); })();
   </script>
 </body>
